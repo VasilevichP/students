@@ -1,0 +1,74 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:display="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Getting Started: Serving Web Content</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link th:href="@{/styles.css}" rel="stylesheet">
+</head>
+<body>
+<div class="auth-reg-cont">
+    <form method="post" action="/registration/register">
+        <img th:src="@{/images/logo.png}" alt="logo" class="logo">
+        <h3>Создание учетной записи</h3>
+        <label>
+            <select name="role" class="auth-reg-inp" required onchange="emailDisplay()">
+                <span th:if="${role==0 || role==null}">
+                <option value="0" selected>Студент</option></span>
+                <span th:unless="${role==0 || role==null}">
+                <option value="0">Студент</option></span>
+                <span th:if="${role==1}">
+                <option value="1">Преподаватель</option></span>
+                <span th:unless="${role==1}">
+                <option value="1">Преподаватель</option></span>
+                <span th:if="${role==2}">
+                <option value="2" selected>Секретарь</option></span>
+                <span th:unless="${role==2}">
+                <option value="2">Секретарь</option></span>
+            </select>
+            <span>Роль</span>
+        </label>
+        <label>
+            <input name="login" required type="text" class="auth-reg-inp" placeholder="login_1234"
+                   th:value="${login==null}?'':${login}">
+            <span>Логин</span>
+        </label>
+        <label>
+            <input name="password" required type="password" class="auth-reg-inp" placeholder="passworD_0"
+                   th:value="${password==null}?'':${password}">
+            <span>Пароль</span>
+        </label>
+        <label id="email">
+            <input name="email" type="email" id="email-field" required class="auth-reg-inp"
+                   placeholder="user.address@mail.ru"
+                   th:value="${email==null}?'':${email}">
+            <span>Адрес эл. почты</span>
+        </label>
+        <span id="sp" th:if="${emailerr!=null || error!=null}">
+            <p class="auth-reg-error" th:text="${error}"></p>
+            <p class="auth-reg-error" th:text="${emailerr}"></p>
+        </span>
+        <button type="submit" class="auth-reg-btn">
+            Зарегистрироваться
+        </button>
+        <p>Уже есть учетная запись?
+            <a href="/authorization">
+                Войти
+            </a>
+        </p>
+    </form>
+</div>
+<script>
+    function emailDisplay() {
+        let role = event.target.options[event.target.selectedIndex].value;
+        if ((role == "0") || (role == "1")) {
+            document.getElementById("email").style.display = "flex";
+            document.getElementById("email").required = true;
+        }
+        if (role == "2") {
+            document.getElementById("email").style.display = "none";
+            document.getElementById("email-field").required = false;
+        }
+        document.getElementById("sp").innerText = "";
+    }
+</script>
+</body>

@@ -1,0 +1,25 @@
+<div th:fragment="sec_header">
+    <div class="header">
+        <img th:src="@{/images/logo.png}" alt="UNIVER" class="header-logo">
+        <div style="display:flex;gap: 30px">
+            <a class="header-link" href="/secretary_student_menu">
+                <p>Студенты</p>
+            </a>
+            <a class="header-link" href="/secretary_lector_menu">
+                <p>Преподаватели</p>
+            </a>
+            <a class="header-link" href="/secretary_secretary_menu">
+                <p>Секретари</p>
+            </a>
+            <a class="header-link" href="/secretary_group_menu">
+                <p>Группы</p>
+            </a>
+            <a class="header-link" href="/secretary_schedule_menu">
+                <p>Расписания</p>
+            </a>
+        </div>
+        <a class="header-link" href="/authorization">
+            <p>Выход</p>
+        </a>
+    </div>
+</div>
