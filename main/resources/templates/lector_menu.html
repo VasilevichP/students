@@ -6,5 +6,210 @@
     <link th:href="@{/styles.css}" rel="stylesheet">
 </head>
 <body>
-Lector
+<style>
+    .filter {
+        height: 2em;
+    }
+
+    label {
+        width: 100%;
+        margin-bottom: 0;
+    }
+</style>
+<header th:insert="header_lector :: lector_header"></header>
+<div style="display: flex;flex-direction: column;width: 90%;margin: auto;margin-top: 6em;gap: 30px;">
+    <form action="/lector_menu/choose" method="post"
+          style="display: flex; gap: 20px;width: 30%">
+        <label>
+            <select class="filter" id="group_select" name="group" onchange="submit()">
+                <option value="">Не выбрана</option>
+                <div th:each="gr:${groups}">
+                        <span th:if="${group!=null && group==gr}">
+                        <option th:value="${gr}" th:text="${gr}" selected></option></span>
+                    <span th:unless="${group!=null && group==gr}">
+                        <option th:value="${gr}" th:text="${gr}"></option></span>
+                </div>
+            </select>
+            <span>Выберите группу</span>
+        </label>
+        <label>
+            <select class="filter" id="subject_select" name="subject" onchange="submit()">
+                <option value="">Не выбран</option>
+                <div th:each="sub:${subjects}">
+                        <span th:if="${subject!=null && subject.equals(sub)}">
+                        <option th:value="${sub}" th:text="${sub}" selected></option></span>
+                    <span th:unless="${subject!=null && subject.equals(sub)}">
+                        <option th:value="${sub}" th:text="${sub}"></option>
+                        </span>
+                </div>
+            </select>
+            <span>Выберите предмет</span>
+        </label>
+    </form>
+    <span th:if="${schedule_dates!=null}">
+        <div style="display: flex">
+            <div style="width: 20%">
+        <table class="schedule-table" style="width: 100%">
+            <tr>
+                <td></td>
+            </tr>
+            <tr th:each="stud:${students}">
+                <td th:text="${stud.getName()}"></td>
+            </tr>
+        </table>
+            </div>
+            <div style="width: 65%;overflow-x: scroll;overflow-y: hidden;white-space: nowrap;scrollbar-width: none">
+         <table class="schedule-table" style="width: 100%">
+        <tr>
+            <div th:each="date:${schedule_dates}">
+                <td th:text="${date.getDayOfMonth()<10?'0'+date.getDayOfMonth():date.getDayOfMonth()}+'.'+${date.getMonthValue()<10?'0'+date.getMonthValue():date.getMonthValue()}"></td>
+            </div>
+        </tr>
+        <tr th:each="stud:${students}">
+            <div th:each="date:${schedule_dates}">
+                <span th:if="${omissions.get(stud.getId())!=null && omissions.get(stud.getId()).equals(date)}">
+                    <td><p>Н/у</p></td>
+                </span>
+                <span th:unless="${omissions.get(stud.getId())!=null && omissions.get(stud.getId()).equals(date)}">
+                <td th:id="${stud.getId()}+' '+${date}" onclick="showNumberList(this)" class="clickable-cell">
+                    <span th:each="mark:${marks}"
+                          th:if="${mark.getDate().equals(date) && mark.getStudent()==stud.getId()}">
+                        <p class="clickable-text" th:id="${mark.getId()}" th:text="${mark.getValue()}"
+                           onclick="showNumberList(this)"></p>
+                    </span>
+                    <span th:each="skip:${skips}"
+                          th:if="${skip.getDate().equals(date) && skip.getStudent()==stud.getId()}">
+                        <p class="clickable-text" th:id="${skip.getId()}" onclick="showNumberList(this)">H</p>
+                    </span>
+                </td>
+                </span>
+            </div>
+        </tr>
+        </table>
+            </div>
+            <div style="width: 15%">
+        <table class="schedule-table" style="width: 100%">
+            <tr>
+                <td>Средний балл</td>
+            </tr>
+            <tr th:each="av:${averages}">
+                <td th:text="${av}"></td>
+            </tr>
+        </table>
+            </div>
+        </div>
+        <form method="post" id="mark_form" action="/lector_menu/mark">
+            <input style="display: none" th:value="${group}" name="group">
+            <input style="display: none" th:value="${subject}" name="subject">
+            <input style="display: none" name="value" id="value">
+            <input style="display: none" name="date" id="date">
+            <input style="display: none" name="student" id="student">
+        </form>
+        <form id="change_form" method="post" action="/lector_menu/change">
+            <input style="display: none" th:value="${group}" name="group">
+            <input style="display: none" th:value="${subject}" name="subject">
+            <input style="display: none" id="mark_id_change" name="id">
+            <input style="display: none" id="mark_or_skip_change" name="old_value">
+            <input style="display: none" id="new_value" name="new_value">
+        </form>
+        <form id="delete_form" method="post" action="/lector_menu/delete">
+            <input style="display: none" th:value="${group}" name="group">
+            <input style="display: none" th:value="${subject}" name="subject">
+            <input style="display: none" id="mark_id_delete" name="id">
+            <input style="display: none" id="mark_or_skip_delete" name="value">
+        </form>
+    </span>
+    <ul class="number-list" id="number-list">
+    </ul>
+
+</div>
+<script>
+    function showNumberList(element) {
+        let el_id;
+        let el_value;
+        let has_children = false;
+        if (element.tagName === "TD") {
+            var children = element.getElementsByTagName("p");
+            if (children.length > 0) {
+                has_children = true;
+                let p = children[0];
+                el_value = p.textContent;
+                el_id = p.id;
+            } else {
+                el_id = element.id;
+            }
+        }
+        if (element.tagName === "P") {
+            has_children = true;
+            el_id = element.id;
+            el_value = element.textContent;
+        }
+        if (has_children === false) {
+            var parts = el_id.split(' ');
+            document.getElementById("student").value = parts[0];
+            document.getElementById("date").value = parts[1];
+        }
+        const numberList = document.getElementById('number-list');
+        numberList.innerHTML = '';
+        if (has_children) {
+            const li = document.createElement('li');
+            li.textContent = "Очистить поле";
+            numberList.appendChild(li);
+            li.onclick = function (val) {
+                document.getElementById("mark_id_delete").value = el_id;
+                document.getElementById("mark_or_skip_delete").value = el_value;
+                document.getElementById("delete_form").submit();
+            };
+        }
+        const li = document.createElement('li');
+        li.textContent = "Пропуск";
+        numberList.appendChild(li);
+        if (has_children) {
+            li.onclick = function (val) {
+                document.getElementById("mark_id_change").value = el_id;
+                document.getElementById("mark_or_skip_change").value = el_value;
+                document.getElementById("new_value").value = "N";
+                document.getElementById("change_form").submit();
+            }
+        } else {
+            li.onclick = function (val) {
+                document.getElementById("value").value = "N";
+                document.getElementById("mark_form").submit();
+            };
+        }
+        for (let i = 0; i <= 10; i++) {
+            const li = document.createElement('li');
+            li.textContent = i;
+            numberList.appendChild(li);
+            if (has_children) {
+                li.onclick = function (val) {
+                    document.getElementById("mark_id_change").value = el_id;
+                    document.getElementById("mark_or_skip_change").value = el_value;
+                    document.getElementById("new_value").value = li.innerText;
+                    document.getElementById("change_form").submit();
+                }
+            } else {
+                li.onclick = function (val) {
+                    document.getElementById("value").value = li.innerText;
+                    document.getElementById("mark_form").submit();
+                };
+            }
+        }
+        const rect = element.getBoundingClientRect();
+        numberList.style.top = `${rect.top + window.scrollY}px`;
+        numberList.style.left = `${rect.right + window.scrollX}px`;
+        numberList.style.display = 'block';
+    }
+
+    function hideNumberList() {
+        document.getElementById('number-list').style.display = 'none';
+    }
+
+    document.addEventListener('click', function (event) {
+        const numberList = document.getElementById('number-list');
+        if (!numberList.contains(event.target) && !(event.target.classList.contains('clickable-cell') || event.target.classList.contains('clickable-text'))) {
+            hideNumberList();
+        }
+    });
+</script>
 </body>

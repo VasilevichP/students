@@ -6,5 +6,131 @@
     <link th:href="@{/styles.css}" rel="stylesheet">
 </head>
 <body>
-Student
+<header th:insert="header_lector :: lector_header"></header>
+<div style="display: flex;justify-content: space-between;width: 90%;margin: auto;margin-top: 6em">
+    <div style="width: 13%">
+        <div class="nav-list">
+            <div style="padding: 5px;" class="chosen">
+                <a style="text-decoration: none;display: flex" th:href="'/student_menu/'+${student.getId()}">
+                    <img th:src="@{/images/profile_icon.png}" alt="" class="icon-pic">
+                    <div class="icon-text">Профиль</div>
+                </a>
+            </div>
+            <div style="padding: 5px;">
+                <a style="text-decoration: none;display: flex" th:href="'/student_menu/'+${student.getId()}+'/grades'">
+                    <img th:src="@{/images/book_icon.png}" alt="" class="icon-pic">
+                    <div class="icon-text">Успеваемость</div>
+                </a>
+            </div>
+            <div style="padding: 5px;">
+                <a style="text-decoration: none;display: flex" th:href="'/student_menu/'+${student.getId()}+'/omissions'">
+                    <img th:src="@{/images/document_icon.png}" alt="" class="icon-pic">
+                    <div class="icon-text">Заявления</div>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div style="width: 20%">
+        <span th:if="${student.getPhoto()!=null && !student.getPhoto().equals('')}">
+        <img alt="Student photo" th:src="@{/images/student_photos/{id}.png(id=${student.getId()})}"
+             class="photo"></span>
+        <span th:unless="${student.getPhoto()!=null && !student.getPhoto().equals('')}">
+        <img alt="No image" th:src="@{/images/noimg.png}" class="photo"></span>
+    </div>
+
+    <div style="width: 60%">
+        <div>
+            <div style="display: flex;flex-direction: row;justify-content: space-between">
+                <div style="width: 45%;display: flex;flex-direction: column">
+                    <h4>Личная информация</h4>
+                    <table class="inv-table" style="width: 100%">
+                        <tr>
+                            <td style="width: 40%">ФИО</td>
+                            <td th:text="${student.getName()}">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Дата рождения</td>
+                            <td th:text="${student.getBirth_date()}">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Пол</td>
+                            <td th:text="${student.getGender()==1?'Мужской':'Женский'}">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Телефон</td>
+                            <td th:text="${student.getPhone()}">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Адрес эл. почты</td>
+                            <td th:text="${student.getEmail()}">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Прописка</td>
+                            <td th:text="${student.getRegistration_address()}">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Страна</td>
+                            <td th:text="${student.getCountry()}">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Номер паспорта</td>
+                            <td th:text="${student.getPassport()}">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Адрес</td>
+                            <td th:text="${student.getAddress()}">
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="width: 1px;background-color: gray"></div>
+                <div style="width: 45%;display: flex;flex-direction: column">
+                    <h4>Студенческая информация</h4>
+                    <table class="inv-table" style="width: 100%">
+                        <tr>
+                            <td style="width: 40%">Курс</td>
+                            <td th:text="${student.getCourse()}">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Факультет</td>
+                            <td th:text="${student.getFaculty()}">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Специальность</td>
+                            <td th:text="${student.getSpecialty()}">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Группа</td>
+                            <td th:text="${student.getGroupnumber()}">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Тип обучения</td>
+                            <td th:text="${student.getType_of_study()==1? 'Платное': 'Бюджет'}">
+                            </td>
+                        </tr>
+                        <span th:if="${student.getType_of_study()==2}">
+                            <tr>
+                            <td>Стипендия</td>
+                            <td th:text="${student.getScholarship()}">
+                            </td>
+                        </tr>
+                        </span>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </body>

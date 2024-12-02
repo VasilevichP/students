@@ -1,13 +1,7 @@
 package com.example.demo.Controllers;
 
-import com.example.demo.Entities.Faculties;
-import com.example.demo.Entities.Specialties;
-import com.example.demo.Entities.StudGroup;
-import com.example.demo.Entities.Student;
-import com.example.demo.Services.GroupService;
-import com.example.demo.Services.LectorService;
-import com.example.demo.Services.SecretaryService;
-import com.example.demo.Services.StudentService;
+import com.example.demo.Entities.*;
+import com.example.demo.Services.*;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -24,6 +18,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
@@ -33,6 +28,8 @@ public class SecretaryStudentController {
     private GroupService groupService;
     @Autowired
     private StudentService studentService;
+    @Autowired
+    private ScheduleService scheduleService;
 
     @GetMapping("/secretary_student_menu")
     public String secretary_student_menu(Model model, HttpSession session) {
@@ -48,17 +45,16 @@ public class SecretaryStudentController {
         if (user != null) {
             if (user == 's') {
                 if (session.getAttribute("students") == null) {
-                    Iterable<Student> students = studentService.getAllStudents();
-                    model.addAttribute("students", students);
-                    if (StreamSupport.stream(students.spliterator(), false).count() == 0)
-                        model.addAttribute("noStudents", "В базе данных нет студентов");
+                    if (!model.containsAttribute("students")) {
+                        Iterable<Student> students = studentService.getAllStudents();
+                        model.addAttribute("students", students);
+                        if (StreamSupport.stream(students.spliterator(), false).count() == 0)
+                            model.addAttribute("noStudents", "В базе данных нет студентов");
+                    }
                     ArrayList<String> faculties = new ArrayList<>();
-//                    ArrayList<String> filter_faculties = new ArrayList<>();
                     for (Faculties f : Faculties.values()) {
                         faculties.add(f.getTitle());
                     }
-//                    filter_faculties = faculties;
-//                    model.addAttribute("filter_faculties", filter_faculties);
                     model.addAttribute("faculties", faculties);
                     ArrayList<String> specialties = (ArrayList<String>) session.getAttribute("specialties");
                     if (specialties != null) {
@@ -100,6 +96,18 @@ public class SecretaryStudentController {
                         groups.removeIf(g -> g.getCourse() != cour);
                     }
                     model.addAttribute("grouplist", groups);
+                    model.addAttribute("filter_faculties", faculties);
+                    if (!model.containsAttribute("filter_specialties")) {
+                        ArrayList<String> filter_spec = new ArrayList<>();
+                        for (Specialties s : Specialties.values()) {
+                            filter_spec.add(s.getTitle());
+                        }
+                        model.addAttribute("filter_specialties", filter_spec);
+                    }
+                    if (!model.containsAttribute("filter_groups")) {
+                        List<StudGroup> groupList = (List<StudGroup>) groupService.getAllGroups();
+                        model.addAttribute("filter_groups", groupList);
+                    }
                     return "secretary_student_menu";
                 }
             }
@@ -188,12 +196,13 @@ public class SecretaryStudentController {
                     canAdd = false;
                 }
                 if (canAdd) {
-                    System.out.println("can add");
                     try {
                         Student student = new Student("", "", email, name, LocalDate.parse(b_date), group.get(), gender, phone, passport, address,
-                                country, reg_address, faculty, specialty, course, type, 400.00, "");
+                                country, reg_address, faculty, specialty, course, type);
+                        if (type==2) student.setScholarship(400.00);
                         System.out.println("can save");
                         studentService.addOrChangeStudent(student);
+                        model.addAttribute("success", "Студент был добавлен в базу данных");
                         if (!file.isEmpty()) {
                             try {
                                 System.out.println(file.getOriginalFilename());
@@ -209,7 +218,6 @@ public class SecretaryStudentController {
                                 System.out.println(e.getMessage());
                             }
                         }
-                        System.out.println("saved");
                     } catch (Exception e) {
                         System.out.println("exception");
                         session.setAttribute("specialty", specialty);
@@ -229,7 +237,6 @@ public class SecretaryStudentController {
                         throw new RuntimeException(e);
                     }
                 } else {
-                    System.out.println("cant add");
                     session.setAttribute("specialty", specialty);
                     session.setAttribute("faculty", faculty);
                     model.addAttribute("name", name);
@@ -263,11 +270,11 @@ public class SecretaryStudentController {
                 faculties.add(f.getTitle());
             }
             ArrayList<String> specialties = new ArrayList<>();
-            Faculties f = Faculties.values()[0];
+            Faculties f = Faculties.getInstance(student.getFaculty());
             for (Specialties s : Specialties.values()) {
                 if (s.getFaculty().equals(f)) specialties.add(s.getTitle());
             }
-            String s = specialties.get(0);
+            String s = student.getSpecialty();
             ArrayList<StudGroup> groups = groupService.findBySpecialty(s);
             int cour = student.getCourse();
             groups.removeIf(g -> g.getCourse() != cour);
@@ -303,7 +310,7 @@ public class SecretaryStudentController {
         student.setSpecialty(specialties.get(0));
         student.setName(nam);
         student.setGender(gen);
-        if (b_d!=null && !b_d.isEmpty()) student.setBirth_date(LocalDate.parse(b_d));
+        if (b_d != null && !b_d.isEmpty()) student.setBirth_date(LocalDate.parse(b_d));
         student.setPhone(ph);
         student.setEmail(em);
         student.setRegistration_address(reg_adr);
@@ -349,10 +356,10 @@ public class SecretaryStudentController {
 
     @PostMapping("/secretary_student_menu/{id:\\d+}/change")
     public String secretary_student_change(Model model, HttpSession session, @PathVariable int id, @RequestParam String name, @RequestParam String b_date,
-                                        @RequestParam int gender, @RequestParam String phone, @RequestParam String email, @RequestParam String reg_address,
-                                        @RequestParam String country, @RequestParam String passport, @RequestParam String address, @RequestParam int course,
-                                        @RequestParam Optional<Long> group, @RequestParam String faculty, @RequestParam String specialty,
-                                        @RequestParam int type, @RequestParam("photo") MultipartFile file){
+                                           @RequestParam int gender, @RequestParam String phone, @RequestParam String email, @RequestParam String reg_address,
+                                           @RequestParam String country, @RequestParam String passport, @RequestParam String address, @RequestParam int course,
+                                           @RequestParam Optional<Long> group, @RequestParam String faculty, @RequestParam String specialty,
+                                           @RequestParam int type,@RequestParam Optional<Double> scholarship, @RequestParam("photo") MultipartFile file) {
         Student student = studentService.getById(id);
         boolean canAdd = true;
         if (studentService.findByName(name) && !studentService.getByName(name).getId().equals(student.getId())) {
@@ -374,8 +381,7 @@ public class SecretaryStudentController {
         if (group.isEmpty()) {
             model.addAttribute("group_error", "Нет подходящей для студента группы");
             canAdd = false;
-        }
-        else student.setGroupnumber(group.get());
+        } else student.setGroupnumber(group.get());
         student.setFaculty(faculty);
         student.setSpecialty(specialty);
         student.setName(name);
@@ -389,6 +395,11 @@ public class SecretaryStudentController {
         student.setAddress(address);
         student.setCourse(course);
         student.setType_of_study(type);
+        if (type==2) {
+            if(scholarship.isPresent())
+            student.setScholarship(scholarship.get());
+            else student.setScholarship(400.00);
+        }else student.setScholarship(0);
         Faculties fac = Faculties.getInstance(faculty);
         ArrayList<String> specialties = Specialties.getByFaculty(fac);
         model.addAttribute("specialties", specialties);
@@ -398,8 +409,8 @@ public class SecretaryStudentController {
         ArrayList<StudGroup> groups = groupService.findBySpecialty(specialty);
         groups.removeIf(g -> g.getCourse() != course);
         model.addAttribute("grouplist", groups);
-        model.addAttribute("student",student);
-        if(canAdd){
+        model.addAttribute("student", student);
+        if (canAdd) {
             if (!file.isEmpty()) {
                 try {
                     File f = new File("D:\\Work\\Java\\student_account\\demo(1)\\demo\\src\\main\\resources\\static\\images\\student_photos\\" + id + ".png");
@@ -412,17 +423,156 @@ public class SecretaryStudentController {
                 }
             }
             studentService.addOrChangeStudent(student);
+            model.addAttribute("success", "Информация о студенте была обновлена");
         }
         return "secretary_student_info";
     }
 
     @PostMapping("/secretary_student_menu/{id:\\d+}/delete")
-    public String deleteStudent(Model model, HttpSession session, @PathVariable int id){
-        try{
+    public String deleteStudent(Model model, HttpSession session, @PathVariable int id) {
+        try {
             studentService.deleteStudent(id);
-        }catch (Exception e){
+            model.addAttribute("success", "Информация о студенте была удалена");
+        } catch (Exception e) {
             System.out.println(e.getMessage());
         }
         return secretary_student_menu(model, session);
+    }
+
+    @PostMapping("/secretary_student_menu/filter")
+    public String filter(Model model, HttpSession session, @RequestParam String search, @RequestParam int filter_course,
+                         @RequestParam String filter_faculty, @RequestParam String filter_specialty, @RequestParam int filter_group) {
+        List<Student> students = (List<Student>) studentService.getAllStudents();
+        if (!search.isEmpty()) {
+            students = studentService.search(students, search);
+            model.addAttribute("search", search);
+        }
+        if (filter_course != 0) {
+            students = studentService.filterByCourse(students, filter_course);
+            model.addAttribute("filter_course", filter_course);
+        }
+        if (!filter_faculty.isEmpty()) {
+            students = studentService.filterByFaculty(students, filter_faculty);
+            model.addAttribute("filter_faculty", filter_faculty);
+            ArrayList<String> sp = new ArrayList<>();
+            Faculties f = Faculties.getInstance(filter_faculty);
+            for (Specialties s : Specialties.values()) {
+                if (s.getFaculty().equals(f)) sp.add(s.getTitle());
+            }
+            model.addAttribute("filter_specialties", sp);
+            if (filter_specialty.isEmpty()) {
+                ArrayList<StudGroup> groups = new ArrayList<>();
+                for (String s : sp) {
+                    ArrayList<StudGroup> grs = groupService.findBySpecialty(s);
+                    groups.addAll(grs);
+                }
+                model.addAttribute("filter_groups", groups);
+            }
+        }
+        if (!filter_specialty.isEmpty()) {
+            students = studentService.filterBySpecialty(students, filter_specialty);
+            model.addAttribute("filter_specialty", filter_specialty);
+            ArrayList<StudGroup> groups = groupService.findBySpecialty(filter_specialty);
+            if (filter_course != 0) {
+                groups.removeIf(g -> g.getCourse() != filter_course);
+            }
+            model.addAttribute("filter_groups", groups);
+        }
+        if (filter_group != 0) {
+            students = studentService.filterByGroup(students, filter_group);
+            model.addAttribute("filter_group", filter_group);
+        }
+        model.addAttribute("students", students);
+        if (students.isEmpty()) model.addAttribute("noStudents", "Не найдено подходящих студентов");
+        return secretary_student_menu(model, session);
+    }
+
+    @GetMapping("/secretary_student_menu/{id:\\d+}/grades")
+    public String toStudentGrades(@PathVariable(value = "id") long id, Model model, HttpSession session) {
+        Student student = studentService.getById(id);
+        StudGroup group = groupService.getByNumber(student.getGroupnumber());
+        List<Schedule> schedules = scheduleService.getByGroup(group.getGr_num());
+        ArrayList<String> subjects = new ArrayList<>();
+        ArrayList<Double> averages = new ArrayList<>();
+        ArrayList<Long> skips = new ArrayList<>();
+        for (Schedule s : schedules) {
+            double average = scheduleService.getStudentScheduleAverage(student.getId(), s.getId());
+            long skip = scheduleService.countStudentSkipsBySchedule(student.getId(), s.getId());
+            if (!subjects.contains(s.getSubject())) {
+                subjects.add(s.getSubject());
+                averages.add(average);
+                skips.add(skip);
+            } else {
+                int index = subjects.indexOf(s.getSubject());
+                double old_av = averages.get(index) + average;
+                averages.set(index, old_av);
+                long old_sk = skips.get(index) + skip;
+                skips.set(index, old_sk);
+            }
+        }
+        model.addAttribute("general_average", student.getAverage_mark());
+        model.addAttribute("all_skips", student.getSkips());
+        model.addAttribute("subjects", subjects);
+        model.addAttribute("averages", averages);
+        model.addAttribute("skips", skips);
+        model.addAttribute("student", student);
+        return "secretary_student_grades";
+    }
+
+    @GetMapping("/secretary_student_menu/{id:\\d+}/omissions")
+    public String toStudentOmissions(@PathVariable(value = "id") long id, Model model, HttpSession session) {
+        Student student = studentService.getById(id);
+        model.addAttribute("student", student);
+        List<Omission> omissions = scheduleService.getStudentOmissions(id);
+        model.addAttribute("omissions", omissions);
+        return "secretary_student_omissions";
+    }
+
+    @PostMapping("/secretary_student_menu/{id:\\d+}/omissions/delete")
+    public String deleteOmission(@PathVariable(value = "id") long id, @RequestParam int om_id, @RequestParam int page, Model model, HttpSession session) {
+        Omission omission = scheduleService.getOmissionById(om_id);
+        omission.setStatus(2);
+        scheduleService.saveOmission(omission);
+        if (page == 2) {
+            Student student = studentService.getById(id);
+            model.addAttribute("student", student);
+            List<Omission> omissions = scheduleService.getStudentOmissions(id);
+            model.addAttribute("omissions", omissions);
+            return "secretary_student_omissions";
+        }
+        else {
+            List<Omission> omissions = scheduleService.getOmissionsByStatus(0);
+            List<Student> students = new ArrayList<>();
+            for (Omission o:omissions){
+                students.add(studentService.getById(o.getStudent()));
+            }
+            model.addAttribute("omissions",omissions);
+            model.addAttribute("students",students);
+            return "secretary_menu";
+        }
+    }
+
+    @PostMapping("/secretary_student_menu/{id:\\d+}/omissions/approve")
+    public String approveOmission(@PathVariable(value = "id") long id, @RequestParam int om_id, @RequestParam int page, Model model, HttpSession session) {
+        Omission omission = scheduleService.getOmissionById(om_id);
+        omission.setStatus(1);
+        scheduleService.approveOmission(omission);
+        if (page == 2) {
+            Student student = studentService.getById(id);
+            model.addAttribute("student", student);
+            List<Omission> omissions = scheduleService.getStudentOmissions(id);
+            model.addAttribute("omissions", omissions);
+            return "secretary_student_omissions";
+        }
+        else {
+            List<Omission> omissions = scheduleService.getOmissionsByStatus(0);
+            List<Student> students = new ArrayList<>();
+            for (Omission o:omissions){
+                students.add(studentService.getById(o.getStudent()));
+            }
+            model.addAttribute("omissions",omissions);
+            model.addAttribute("students",students);
+            return "secretary_menu";
+        }
     }
 }

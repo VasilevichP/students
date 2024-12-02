@@ -1,9 +1,6 @@
 package com.example.demo.Controllers;
 
-import com.example.demo.Entities.Lector;
-import com.example.demo.Entities.Schedule;
-import com.example.demo.Entities.StudGroup;
-import com.example.demo.Entities.Subject;
+import com.example.demo.Entities.*;
 import com.example.demo.Repositories.ScheduleRepository;
 import com.example.demo.Services.GroupService;
 import com.example.demo.Services.LectorService;
@@ -76,7 +73,7 @@ public class SecretaryScheduleController {
                 iter++;
                 if (iter == 6) break;
             }
-            List<Map<String, Object>> schedule = scheduleService.getByLector(lector.get());
+            List<Map<String, Object>> schedule = scheduleService.getByLector(lector.get(),1);
             model.addAttribute("schedules",schedule);
             model.addAttribute("days", days);
         }
@@ -128,6 +125,8 @@ public class SecretaryScheduleController {
                 iter++;
                 if (iter == 6) break;
             }
+            List<Map<String, Object>> schedule = scheduleService.getByLector(group.get(),2);
+            model.addAttribute("schedules",schedule);
             model.addAttribute("days", days);
             model.addAttribute("group", group.get());
             List<Lector> lectors = lectorService.getByGroup((long) group.get());
@@ -147,6 +146,8 @@ public class SecretaryScheduleController {
         Iterable<StudGroup> groups = groupService.getAllGroups();
         model.addAttribute("groups", groups);
         model.addAttribute("gr_sch", 1);
+        List<Map<String, Object>> schedule = scheduleService.getByLector(group,2);
+        model.addAttribute("schedules",schedule);
         model.addAttribute("group", group);
         Iterable<Lector> lectors = lectorService.getByGroup(group);
         model.addAttribute("lectors", lectors);
@@ -175,10 +176,19 @@ public class SecretaryScheduleController {
             iter++;
             if (iter == 6) break;
         }
+        int forLector = (int) scheduleService.findHowManyForLector(lector, day);
+        int forGroup = (int) scheduleService.findHowManyForGroup(group, day);
+        System.out.println("fl" + forLector);
+        System.out.println("fg" + forGroup);
+        if (forLector < 7 && forGroup < 7) {
+            Schedule sch = new Schedule(lector, group, subject, day);
+            scheduleService.addSchedule(sch);
+        }
         model.addAttribute("days", days);
         model.addAttribute("day", day);
         model.addAttribute("group", group);
         model.addAttribute("subject", subject);
+        List<Map<String, Object>> schedule = new ArrayList<>();
         if (val == 1) {
             ArrayList<Lector> lectors = lectorService.getBySubject(subject);
             ArrayList<String> subjects = lectorService.getSubjects(lector);
@@ -190,6 +200,7 @@ public class SecretaryScheduleController {
             model.addAttribute("subjects", subjects);
             ArrayList<Long> groups = lectorService.getGroups(lector);
             model.addAttribute("groups", groups);
+            schedule = scheduleService.getByLector(lector,1);
         }
         if (val == 2) {
             List<Lector> lectors = lectorService.getByGroup((long) group);
@@ -201,16 +212,60 @@ public class SecretaryScheduleController {
                 Iterable<StudGroup> groups = groupService.getAllGroups();
                 model.addAttribute("groups", groups);
                 model.addAttribute("gr_sch", 1);
+                schedule = scheduleService.getByLector(group,2);
             }
         }
-        int forLector = (int) scheduleService.findHowManyForLector(lector, day);
-        int forGroup = (int) scheduleService.findHowManyForGroup(group, day);
-        System.out.println("fl" + forLector);
-        System.out.println("fg" + forGroup);
-        if (forLector < 7 && forGroup < 7) {
-            Schedule schedule = new Schedule(lector, group, subject, day);
-            scheduleService.addSchedule(schedule);
+        model.addAttribute("schedules",schedule);
+        model.addAttribute("success", "Расписание было обновлено");
+        return secretary_schedule_menu(model, httpSession);
+    }
+
+    @PostMapping("/secretary_schedule_menu/delete")
+    public String deleteSchedule(Model model, HttpSession httpSession, @RequestParam String lector, @RequestParam String subject,
+                              @RequestParam int group, @RequestParam int day, @RequestParam int val, @RequestParam int id) {
+        Lector l = lectorService.getByName(lector);
+        long lec_num = l.getId();
+        scheduleService.deleteScheduleByID(id);
+        ArrayList<String> days = new ArrayList<>();
+        int iter = 0;
+        for (DayOfWeek d : DayOfWeek.values()) {
+            days.add(d.getDisplayName(TextStyle.FULL, Locale.forLanguageTag("ru")));
+            iter++;
+            if (iter == 6) break;
         }
+        model.addAttribute("days", days);
+        model.addAttribute("day", day);
+        model.addAttribute("group", group);
+        model.addAttribute("subject", subject);
+        List<Map<String, Object>> schedule = new ArrayList<>();
+        if (val == 1) {
+            ArrayList<Lector> lectors = lectorService.getBySubject(subject);
+            ArrayList<String> subjects = lectorService.getSubjects(lec_num);
+            model.addAttribute("lector_chosen", lectorService.getById(lec_num).getName());
+            model.addAttribute("lector", lec_num);
+            model.addAttribute("lec_sch", 1);
+            model.addAttribute("canAdd", 1);
+            model.addAttribute("lectors", lectors);
+            model.addAttribute("subjects", subjects);
+            ArrayList<Long> groups = lectorService.getGroups(lec_num);
+            model.addAttribute("groups", groups);
+            schedule = scheduleService.getByLector(lec_num,1);
+        }
+        if (val == 2) {
+            List<Lector> lectors = lectorService.getByGroup((long) group);
+            if (!lectors.isEmpty()) {
+                List<String> subjects = lectorService.getSubjects(lec_num);
+                model.addAttribute("gr_lector", lec_num);
+                model.addAttribute("subjects", subjects);
+                model.addAttribute("lectors", lectors);
+                Iterable<StudGroup> groups = groupService.getAllGroups();
+                model.addAttribute("groups", groups);
+                model.addAttribute("gr_sch", 1);
+                schedule = scheduleService.getByLector(group,2);
+            }
+        }
+        model.addAttribute("schedules",schedule);
+        model.addAttribute("success", "Расписание было обновлено");
         return secretary_schedule_menu(model, httpSession);
     }
 }

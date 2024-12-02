@@ -19,4 +19,14 @@ public class Schedule {
     private String subject;
     @Id
     private int day;
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+
+    public Schedule(long lector, long groupnumber, String subject, int day) {
+        this.lector = lector;
+        this.groupnumber = groupnumber;
+        this.subject = subject;
+        this.day = day;
+    }
 }

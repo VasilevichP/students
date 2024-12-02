@@ -12,9 +12,9 @@
         <h3>Создание учетной записи</h3>
         <label>
             <select name="role" class="auth-reg-inp" required onchange="emailDisplay()">
-                <span th:if="${role==0 || role==null}">
+                <span th:if="${role==0}">
                 <option value="0" selected>Студент</option></span>
-                <span th:unless="${role==0 || role==null}">
+                <span th:unless="${role==0}">
                 <option value="0">Студент</option></span>
                 <span th:if="${role==1}">
                 <option value="1">Преподаватель</option></span>
@@ -37,12 +37,21 @@
                    th:value="${password==null}?'':${password}">
             <span>Пароль</span>
         </label>
+        <span id="sp2" th:if="${passerror!=null}">
+            <p class="auth-reg-error" th:text="${passerror}"></p>
+        </span>
         <label id="email">
             <input name="email" type="email" id="email-field" required class="auth-reg-inp"
                    placeholder="user.address@mail.ru"
                    th:value="${email==null}?'':${email}">
             <span>Адрес эл. почты</span>
         </label>
+        <span th:if="${role!=null && role==2}">
+            <script>
+            document.getElementById("email").style.display = "none";
+            document.getElementById("email-field").required = false;
+            </script>
+        </span>
         <span id="sp" th:if="${emailerr!=null || error!=null}">
             <p class="auth-reg-error" th:text="${error}"></p>
             <p class="auth-reg-error" th:text="${emailerr}"></p>
@@ -69,6 +78,7 @@
             document.getElementById("email-field").required = false;
         }
         document.getElementById("sp").innerText = "";
+        document.getElementById("sp2").innerText = "";
     }
 </script>
 </body>

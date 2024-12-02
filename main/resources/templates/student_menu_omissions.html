@@ -1,0 +1,138 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Getting Started: Serving Web Content</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link th:href="@{/styles.css}" rel="stylesheet">
+</head>
+<body>
+<style>
+    .del_btn {
+        border-radius: 10px;
+        padding: 10px 0;
+        border: none;
+        color: #005200;
+        background-color: transparent;
+        cursor: pointer;
+    }
+
+    .del_btn:hover {
+        border-radius: 10px;
+        padding: 10px 0;
+        color: #005200;
+        background-color: transparent;
+        font-size: 15px;
+        border: none;
+    }
+</style>
+<header th:insert="header_lector :: lector_header"></header>
+<div class="modalBackground" id="mod_back">
+    <div class="modalActive" id="mod_act" style="top:7%">
+        <div class="modalClose" id="mod_close" onclick="modalClose()">
+            <p style="font-size: 30px;margin: 0;color: #005200">x</p>
+        </div>
+        <div class="modalWindow" id="mod_wind">
+            <h3>Оформление заявления по ОРВИ</h3>
+            <form method="post" th:action="'/student_menu/'+${student.getId()}+'/omissions/add'">
+                <input style="display:none;" th:value="${student.getId()}" name="student">
+                <label>
+                    <input class="auth-reg-inp" type="date" name="start" id="start" onchange="dateChosen(this)"
+                           th:min="${start_date_min}" th:max="${start_date_max}" th:value="${date}" required>
+                    <span>Дата начала</span>
+                </label>
+                <span th:unless="${end_date_max!=null}"><div style="margin-top: 20px"></div></span>
+                <span th:if="${end_date_max!=null}">
+                <label>
+                    <input class="auth-reg-inp" type="date" name="finish" id="finish"
+                           th:min="${end_date_min}" th:max="${end_date_max}" required>
+                    <span>Дата конца</span>
+                </label>
+                <button class="auth-reg-btn" type="submit">Отправить заявку</button>
+                </span>
+            </form>
+            <form id="choose_date" method="post"
+                  th:action="'/student_menu/'+${student.getId()}+'/omissions/choose_date'" style="display: none">
+                <input id="date" name="date">
+            </form>
+        </div>
+    </div>
+</div>
+<span th:if="${end_date_max!=null}">
+<script>
+    document.getElementById("mod_back").style.display = "block";
+</script>
+</span>
+<div style="display: flex;justify-content: space-between;width: 90%;margin: auto;margin-top: 6em">
+    <div style="width: 13%">
+        <div class="nav-list">
+            <div style="padding: 5px;">
+                <a style="text-decoration: none;display: flex" th:href="'/student_menu/'+${student.getId()}">
+                    <img th:src="@{/images/profile_icon.png}" alt="" class="icon-pic">
+                    <div class="icon-text">Профиль</div>
+                </a>
+            </div>
+            <div style="padding: 5px;">
+                <a style="text-decoration: none;display: flex" th:href="'/student_menu/'+${student.getId()}+'/grades'">
+                    <img th:src="@{/images/book_icon.png}" alt="" class="icon-pic">
+                    <div class="icon-text">Успеваемость</div>
+                </a>
+            </div>
+            <div style="padding: 5px;" class="chosen">
+                <a style="text-decoration: none;display: flex"
+                   th:href="'/student_menu/'+${student.getId()}+'/omissions'">
+                    <img th:src="@{/images/document_icon.png}" alt="" class="icon-pic">
+                    <div class="icon-text">Заявления</div>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div style="width: 75%;display: flex;flex-direction: column;">
+        <h4>Заявления по ОРВИ</h4>
+        <div style="display: flex; gap: 20px;align-items: baseline">
+            <button th:class="${cant_add==null?'auth-reg-btn':'auth-reg-btn button-disabled'}"
+                    style="width: fit-content;padding:0 10px;margin-top: 0" onclick="modalOpen()"
+                    th:disabled="${cant_add!=null}">Подать заявку
+            </button>
+            <span th:if="${cant_add!=null}">
+                <p class="auth-reg-error">Исчерпан лимит заявок в этом месяце</p>
+            </span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+            <div th:each="om:${omissions}">
+                <form method="post" th:action="'/student_menu/'+${student.getId()}+'/omissions/delete'">
+                    <div class="omission-card">
+                        <input style="display: none" th:value="${om.getId()}" name="om_id">
+                        <p th:text="'Дата начала: '+${om.getBegin()}"></p>
+                        <p th:text="'Дата конца: '+${om.getEnd()}"></p>
+                        <span th:if="${om.getStatus()==0}">
+                             <p>Статус: На рассмотрении</p></span>
+                        <span th:if="${om.getStatus()==1}">
+                             <p>Статус: <span style="color:darkgreen">Одобрена</span></p></span>
+                        <span th:if="${om.getStatus()==2}">
+                            <p>Статус: <span style="color:red">Не одобрена</span></p></span>
+                        <span th:if="${om.getStatus()==0}">
+                            <button class="auth-reg-btn"
+                                    style="width: fit-content;padding:0 10px;margin-bottom: 0" type="submit">Отменить</button>
+                        </span>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function modalOpen() {
+        document.getElementById("mod_back").style.display = "block";
+    }
+
+    function modalClose() {
+        document.getElementById("mod_back").style.display = "none";
+    }
+
+    function dateChosen(el) {
+        let value = el.value;
+        document.getElementById("date").value = value;
+        document.getElementById("choose_date").submit();
+    }
+</script>
+</body>

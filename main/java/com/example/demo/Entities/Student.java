@@ -35,12 +35,14 @@ public class Student {
     private int course;
     private int type_of_study;
     private double scholarship;
+    private double average_mark;
+    private int skips;
     private String photo;
 
     public Student(String login, String password, String email, String name,
                    LocalDate birth_date, long gr_num, int gender, String phone, String passport,
                    String address, String country, String registration_address, String faculty, String specialty,
-                   int course, int type_of_study, double scholarship, String photo) {
+                   int course, int type_of_study) {
         this.login = login;
         this.password = password;
         this.email = email;
@@ -57,7 +59,5 @@ public class Student {
         this.specialty = specialty;
         this.course = course;
         this.type_of_study = type_of_study;
-        this.scholarship = scholarship;
-        this.photo = photo;
     }
 }

@@ -119,6 +119,7 @@ public class SecretaryGroupController {
             StudGroup group = new StudGroup(number, specialty, 1, faculty, form);
             System.out.println(group.getForm_of_study());
             groupService.addGroup(group);
+            model.addAttribute("success", "Была добавлена группа "+number);
         }
         return secretary_group_menu(model, session);
     }
@@ -131,28 +132,23 @@ public class SecretaryGroupController {
         session.setAttribute("filter_course", filter_course);
         if (filter_course != 0) {
             groups = groupService.filterByCourse(groups, filter_course);
-            System.out.println(groups.size());
         }
         session.setAttribute("filter_faculty", filter_faculty);
         if (!filter_faculty.equals("-")) {
             System.out.println(filter_faculty);
             groups = groupService.filterByFaculty(groups, filter_faculty);
-            System.out.println(groups.size());
         }
         session.setAttribute("filter_specialty", filter_specialty);
         if (!filter_specialty.equals("-")) {
             groups = groupService.filterBySpecialty(groups, filter_specialty);
-            System.out.println(groups.size());
         }
         session.setAttribute("filter_form", filter_form);
         if (filter_form != 0) {
             groups = groupService.filterByForm(groups, filter_form);
-            System.out.println(groups.size());
         }
         if (search.isPresent()) {
             System.out.println("search: " + search.get());
             groups = groupService.searchByNumber(groups, search.get());
-            System.out.println(groups.size());
             session.setAttribute("search", search.get());
         } else {
             System.out.println("no search");
@@ -192,6 +188,7 @@ public class SecretaryGroupController {
             session.setAttribute("groups", groups);
         }
         session.setAttribute("gr_info", group);
+        model.addAttribute("success", "Информация о группе была обновлена");
         return secretary_group_menu(model, session);
     }
 
@@ -209,6 +206,7 @@ public class SecretaryGroupController {
             }
             session.removeAttribute("gr_info");
             session.removeAttribute("gr_students");
+        model.addAttribute("success", "Группа была удалена");
         return secretary_group_menu(model, session);
     }
 }

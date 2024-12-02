@@ -36,4 +36,14 @@ public enum Specialties {
         }
         return specialties;
     }
+    public static Specialties getInstance(String title){
+        Specialties specialty = null;
+        for (Specialties s:Specialties.values()){
+            if (s.getTitle().equals(title)){
+                specialty=s;
+                break;
+            }
+        }
+        return specialty;
+    }
 }

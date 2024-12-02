@@ -1,29 +1,32 @@
 package com.example.demo.Services;
 
-import com.example.demo.Entities.LecGroup;
-import com.example.demo.Entities.LecSubj;
-import com.example.demo.Entities.Lector;
+import com.example.demo.Entities.*;
 import com.example.demo.Repositories.LecGroupRepository;
 import com.example.demo.Repositories.LecSubjRepository;
 import com.example.demo.Repositories.LectorRepository;
+import com.example.demo.Repositories.ScheduleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class LectorService{
     private final LectorRepository lectorRepository;
     private final LecSubjRepository lecSubjRepository;
     private final LecGroupRepository lecGroupRepository;
+    private final ScheduleRepository scheduleRepository;
 
     @Autowired
-    public LectorService(LectorRepository lectorRepository, LecSubjRepository lecSubjRepository, LecGroupRepository lecGroupRepository) {
+    public LectorService(LectorRepository lectorRepository, LecSubjRepository lecSubjRepository, LecGroupRepository lecGroupRepository, ScheduleRepository scheduleRepository) {
         this.lectorRepository = lectorRepository;
         this.lecSubjRepository = lecSubjRepository;
         this.lecGroupRepository = lecGroupRepository;
+        this.scheduleRepository = scheduleRepository;
     }
 
     public Iterable<Lector> getAllLectors (){
@@ -35,6 +38,11 @@ public class LectorService{
     }
     public boolean existsByEmail(String email){
         return lectorRepository.existsByEmail(email);
+    }
+    public boolean existsByLogin(String login) {return lectorRepository.existsByLogin(login);}
+    public Lector getByLogin(String login) {
+        Optional<Lector> lector = lectorRepository.findByLogin(login);
+        return lector.get();
     }
     public Lector getByEmail(String email){
         Optional<Lector> lector = lectorRepository.findByEmail(email);
@@ -66,6 +74,14 @@ public class LectorService{
         }catch (Exception e){
             System.out.println();
             return false;
+        }
+    }
+    public void updateSchedules(Lector lector){
+        ArrayList<Long> groups = getGroups(lector.getId());
+        ArrayList<String> subjects = getSubjects(lector.getId());
+        List<Schedule> schedules = (List<Schedule>) scheduleRepository.getSchedulesByLector(lector.getId());
+        for (Schedule s:schedules){
+            if((!groups.contains(s.getGroupnumber()))||(!subjects.contains(s.getSubject()))) scheduleRepository.delete(s);
         }
     }
     public boolean addGroups(long lector_id,long group_number){
@@ -129,6 +145,9 @@ public class LectorService{
     public boolean deleteLector(long lector_id){
         try{
             lectorRepository.deleteById(lector_id);
+            lecSubjRepository.deleteAllByLector(lector_id);
+            lecGroupRepository.deleteAllByLector(lector_id);
+            scheduleRepository.deleteAllByLector(lector_id);
             return true;
         }catch (Exception e){
             return false;
@@ -151,5 +170,9 @@ public class LectorService{
         String subs = stringBuilder.toString().substring(0,stringBuilder.length()-2);
         System.out.println(subs);
         return subs;
+    }
+    public List<Lector> search(List<Lector> lectors, String search) {
+        lectors = lectors.stream().filter(s -> ((s.getName().toLowerCase().contains(search.toLowerCase())) || (s.getId().toString().contains(search)))).collect(Collectors.toList());
+        return lectors;
     }
 }

@@ -44,10 +44,12 @@ public class SecretaryLectorController {
         Character user = (Character) session.getAttribute("user");
         if (user != null) {
             if (user == 's') {
-                Iterable<Lector> lectors = lectorService.getAllLectors();
-                model.addAttribute("lectors", lectors);
-                if (StreamSupport.stream(lectors.spliterator(), false).count() == 0)
-                    model.addAttribute("noLectors", "В базе данных нет преподавателей");
+                if (!model.containsAttribute("lectors")) {
+                    Iterable<Lector> lectors = lectorService.getAllLectors();
+                    model.addAttribute("lectors", lectors);
+                    if (StreamSupport.stream(lectors.spliterator(), false).count() == 0)
+                        model.addAttribute("noLectors", "В базе данных нет преподавателей");
+                }
                 Iterable<StudGroup> groups = groupService.getAllGroups();
                 ArrayList<String> subjects = new ArrayList<>();
                 for (Subject sub : Subject.values()) {
@@ -90,6 +92,7 @@ public class SecretaryLectorController {
             for (long g : grps_nums) {
                 lectorService.addGroups(id, g);
             }
+            model.addAttribute("success", "Преподаватель был добавлен в базу данных");
             if (!file.isEmpty()) {
                 try {
                     System.out.println(file.getOriginalFilename());
@@ -103,6 +106,18 @@ public class SecretaryLectorController {
                     System.out.println(e.getMessage());
                 }
             }
+        }
+        return secretary_lector_menu(model, session);
+    }
+
+    @PostMapping("/secretary_lector_menu/filter")
+    public String filter(Model model, HttpSession session,@RequestParam String search){
+        model.addAttribute("search",search);
+        List<Lector> lectors = (List<Lector>) lectorService.getAllLectors();
+        if (!search.isEmpty()){
+            lectors = lectorService.search(lectors,search);
+            model.addAttribute("lectors",lectors);
+            if (lectors.isEmpty()) model.addAttribute("noLectors", "Не найдено подходящих преподавателей");
         }
         return secretary_lector_menu(model, session);
     }
@@ -186,6 +201,8 @@ public class SecretaryLectorController {
             for (long g : grps_nums) {
                 lectorService.addGroups(id, g);
             }
+            lectorService.updateSchedules(lector);
+            model.addAttribute("success", "Информация о преподавателе была обновлена");
         }
         return "secretary_lector_info";
     }
@@ -194,6 +211,7 @@ public class SecretaryLectorController {
     public String deleteStudent(Model model, HttpSession session, @PathVariable int id){
         try{
             lectorService.deleteLector(id);
+            model.addAttribute("success", "Преподаватель был удален");
         }catch (Exception e){
             System.out.println(e.getMessage());
         }

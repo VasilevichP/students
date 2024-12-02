@@ -5,6 +5,7 @@ import com.example.demo.Entities.StudGroup;
 import com.example.demo.Entities.Student;
 import com.example.demo.Repositories.GroupRepository;
 import com.example.demo.Repositories.LectorRepository;
+import com.example.demo.Repositories.ScheduleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,11 +19,13 @@ import java.util.stream.StreamSupport;
 public class GroupService {
     private final GroupRepository groupRepository;
     private final StudentService studentService;
+    private final ScheduleRepository scheduleRepository;
 
     @Autowired
-    public GroupService(GroupRepository groupRepository, StudentService studentService) {
+    public GroupService(GroupRepository groupRepository, StudentService studentService, ScheduleRepository scheduleRepository) {
         this.groupRepository = groupRepository;
         this.studentService = studentService;
+        this.scheduleRepository = scheduleRepository;
     }
 
     public Iterable<StudGroup> getAllGroups() {
@@ -52,6 +55,7 @@ public class GroupService {
         try {
             groupRepository.deleteById(number);
             studentService.deleteAllByGroup(number);
+            scheduleRepository.deleteAllByGroupnumber(number);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }

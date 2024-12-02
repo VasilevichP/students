@@ -1,10 +1,7 @@
 package com.example.demo.Controllers;
 
 import com.example.demo.Entities.*;
-import com.example.demo.Services.GroupService;
-import com.example.demo.Services.LectorService;
-import com.example.demo.Services.SecretaryService;
-import com.example.demo.Services.StudentService;
+import com.example.demo.Services.*;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -20,6 +17,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -28,12 +26,25 @@ import java.util.stream.StreamSupport;
 public class SecretaryController {
     @Autowired
     private SecretaryService secretaryService;
+    @Autowired
+    private StudentService studentService;
+    @Autowired
+    private ScheduleService scheduleService;
 
     @GetMapping("/secretary_menu")
     public String secretary_menu(Model model, HttpSession httpSession) {
         Character user = (Character) httpSession.getAttribute("user");
         if (user != null) {
-            if (user == 's') return "secretary_menu";
+            if (user == 's') {
+                List<Omission> omissions = scheduleService.getOmissionsByStatus(0);
+                List<Student> students = new ArrayList<>();
+                for (Omission o:omissions){
+                    students.add(studentService.getById(o.getStudent()));
+                }
+                model.addAttribute("omissions",omissions);
+                model.addAttribute("students",students);
+                return "secretary_menu";
+            }
         }
         return "redirect:/authorization";
     }
@@ -64,15 +75,20 @@ public class SecretaryController {
     @PostMapping("/secretary_secretary_menu/approve")
     public String approve_secretary(Model model, HttpSession session, @RequestParam String login) {
         secretaryService.approve(login);
+        model.addAttribute("success", "Секретарь" + login+" был добавлен в систему");
         return secretary_secretary_menu(model, session);
     }
 
     @PostMapping("/secretary_secretary_menu/delete")
     public String delete_secretary(Model model, HttpSession session, @RequestParam String login) {
         Secretary secretary = secretaryService.getByLogin(login);
-        if (secretary.getStatus() == 0 || secretaryService.howManyAdmins() > 1) {
+        int status = secretary.getStatus();
+        if (status == 0 || secretaryService.howManyAdmins() > 1) {
             secretaryService.delete(login);
         }
+        if (status==0){
+            model.addAttribute("success", "Заявка была удалена");
+        } else model.addAttribute("success", "Секретарь был удален");
         return secretary_secretary_menu(model, session);
     }
 }

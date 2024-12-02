@@ -24,11 +24,26 @@
         <button type="submit" class="auth-reg-btn">
             Войти
         </button>
+        <p>Забыли пароль?
+            <a href="/password_reset">
+                Восстановить
+            </a>
+        </p>
         <p>Нет учетной записи?
             <a href="/registration">
                 Зарегистрироваться
             </a>
         </p>
     </form>
+    <span th:if="${success!=null}">
+    <div id="popup-message" class="popup hidden-pop" th:text="${success}"></div>
+    <script>
+        const popup = document.getElementById('popup-message');
+        popup.classList.remove('hidden-pop');
+        setTimeout(() => {
+            popup.classList.add('hidden-pop');
+        }, 3000);
+    </script>
+</span>
 </div>
 </body>

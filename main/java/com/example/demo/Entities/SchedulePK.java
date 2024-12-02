@@ -3,6 +3,7 @@ package com.example.demo.Entities;
 import java.io.Serializable;
 
 public class SchedulePK implements Serializable {
+    private Long id;
     private long lector;
     private long groupnumber;
     private String subject;
