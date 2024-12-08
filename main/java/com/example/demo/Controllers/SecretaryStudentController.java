@@ -41,6 +41,7 @@ public class SecretaryStudentController {
         session.removeAttribute("search");
         session.removeAttribute("groups");
         session.removeAttribute("gr_info");
+        session.removeAttribute("gr_students");
         Character user = (Character) session.getAttribute("user");
         if (user != null) {
             if (user == 's') {

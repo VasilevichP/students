@@ -34,6 +34,8 @@ public class SecretaryScheduleController {
         Character user = (Character) httpSession.getAttribute("user");
         if (user != null) {
             if (user == 's') {
+                httpSession.removeAttribute("gr_info");
+                httpSession.removeAttribute("gr_students");
                 return "secretary_schedule";
             }
         }

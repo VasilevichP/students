@@ -97,7 +97,7 @@ public class StudentController {
         model.addAttribute("start_date_min",LocalDate.now());
         model.addAttribute("start_date_max",LocalDate.now().plusDays(1));
         model.addAttribute("end_date_min",date.plusDays(1));
-        model.addAttribute("end_date_max",date.plusDays(5));
+        model.addAttribute("end_date_max",date.plusDays(4));
         model.addAttribute("date",date);
         Student student = studentService.getById(id);
         model.addAttribute("omissions",scheduleService.getStudentOmissions(id));

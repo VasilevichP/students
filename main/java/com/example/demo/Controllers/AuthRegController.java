@@ -140,6 +140,7 @@ public class AuthRegController {
         model.addAttribute("email",email);
         Random rn = new Random();
         int code = rn.nextInt(900000)+100000;
+        authRegService.sendMail(email,code);
         session.setAttribute("code",code);
         System.out.println(code);
         return "password_verification";
